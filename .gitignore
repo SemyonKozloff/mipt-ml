@@ -5,3 +5,4 @@
 *.data
 *.tar.gz
 *.tsv
+__pycache__
