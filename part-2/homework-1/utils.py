@@ -62,7 +62,7 @@ def qualityMedianAE(x,y):
 def BuildForecast(h, ts, AlgName, AlgTitle, ParamsArray, step='D'):
 	FRC_TS = dict()
 	for p in ParamsArray:
-		frc_horizon = pd.date_range(wage.index[-1], periods=h+1, freq=step)[1:]
+		frc_horizon = pd.date_range(ts.index[-1], periods=h+1, freq=step)[1:]
 		frc_ts = pd.DataFrame(index = ts.index.append(frc_horizon), columns = ts.columns)
 		
 		for cntr in ts.columns:
@@ -107,4 +107,62 @@ def InitExponentialSmoothing(x, h, Params):
             y = y*(1-alpha) + alpha*x[t]
             #else do not nothing
         FORECAST[t+h] = y
-    return FORECAST	
+    return FORECAST
+
+# Example of realization
+
+# Simple Exponential Smoothing
+# x <array Tx1>- time series, 
+# h <scalar> - forecasting delay
+# Params <dict> - dictionary with 
+#    alpha <scalar in [0,1]> - smoothing parameter
+
+def SimpleExponentialSmoothing(x, h, Params):
+    T = len(x)
+    alpha = Params['alpha']
+    FORECAST = [np.NaN]*(T+h)
+    if alpha>1:
+        w.warn('Alpha can not be more than 1')
+        #alpha = 1
+        return FORECAST
+    if alpha<0:
+        w.warn('Alpha can not be less than 0')
+        #alpha = 0
+        return FORECAST
+    y = x[0]
+    for cntr in range(T):
+        if not math.isnan(x[cntr]):
+            if math.isnan(y):
+                y=x[cntr]
+            y = y*(1-alpha) + alpha*x[cntr]
+            #else do not nothing
+        FORECAST[cntr+h] = y
+    return FORECAST
+
+def InitExponentialSmoothing(x, h, Params):
+    T = len(x)
+    alpha = Params['alpha']
+    AdaptationPeriod=Params['AdaptationPeriod']
+    FORECAST = [np.NaN]*(T+h)
+    if alpha>1:
+        w.warn('Alpha can not be more than 1')
+        #alpha = 1
+        return FORECAST
+    if alpha<0:
+        w.warn('Alpha can not be less than 0')
+        #alpha = 0
+        return FORECAST
+    y = x[0]
+    t0=0
+    for t in range(0, T):
+        if not math.isnan(x[t]):
+            if math.isnan(y):
+                y=x[t]
+                t0=t
+            if (t-t0+1)<AdaptationPeriod:
+                y = y*(1-alpha)*(t-t0+1)/(AdaptationPeriod) + (1-(1-alpha)*(t-t0+1)/(AdaptationPeriod))*x[t]
+            else:
+                y = y*(1-alpha) + alpha*x[t]
+            #else do not nothing
+        FORECAST[t+h] = y
+    return FORECAST
